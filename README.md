@@ -28,8 +28,9 @@
 │   └── cli.py                    # 命令行入口
 ├── tests/                        # 轻量单元测试
 ├── data/                         # 已生成的分词结果和图像
+├── docs/pdfs/                    # 整理后的课程资料与项目 PDF
+├── presentation/                 # Beamer 展示稿源码与编译版 PDF
 ├── word_representations_biomedical.ipynb
-├── nlp report.pdf
 └── README.md
 ```
 
@@ -105,6 +106,12 @@ python -m pytest
 
 测试覆盖了生物医学术语分词、共现词向量、SimpleBPE、N-gram 和手写 SGNS 的轻量 smoke path。
 
+## 文档与展示
+
+- 原始 PDF 已整理到 `docs/pdfs/`，包括项目报告、课程要求、讲义和阅读清单。
+- 展示用 Beamer 演讲稿位于 `presentation/main.tex`，已编译版本为 `presentation/main.pdf`。
+- Beamer PDF 开启了 notes 模式，包含幻灯片页和对应讲稿备注页。
+
 ## 致谢
 
 本项目基于 Imperial College London Data Science and AI School NLP 课程要求完成。数据来源参考 [CORD-19](https://www.semanticscholar.org/cord19)。
@@ -143,8 +150,9 @@ Key features:
 │   └── cli.py                    # Command line interface
 ├── tests/                        # Lightweight unit tests
 ├── data/                         # Existing tokenized outputs and figures
+├── docs/pdfs/                    # Organized course and project PDFs
+├── presentation/                 # Beamer presentation source and compiled PDF
 ├── word_representations_biomedical.ipynb
-├── nlp report.pdf
 └── README.md
 ```
 
@@ -219,6 +227,12 @@ python -m pytest
 ```
 
 The tests cover biomedical tokenization plus smoke paths for co-occurrence vectors, SimpleBPE, N-gram, and from-scratch SGNS.
+
+## Documents and Presentation
+
+- Original PDFs are organized under `docs/pdfs/`, including project reports, requirements, lecture notes, and reading materials.
+- The Beamer presentation source is `presentation/main.tex`; the compiled deck is `presentation/main.pdf`.
+- The Beamer PDF uses notes mode, so it includes both slide pages and speaker-note pages.
 
 ## Acknowledgements
 

@@ -1,0 +1,221 @@
+\documentclass[aspectratio=169,10pt]{ctexbeamer}
+
+\usetheme{Madrid}
+\usecolortheme{seahorse}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{pgfpages}
+
+\setbeameroption{show notes}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+
+\title{生物医学领域词表示项目展示}
+\subtitle{Word Representation in the Biomedical Domain}
+\author{Group 3}
+\institute{Imperial College London Data Science and AI Winter School}
+\date{2025 NLP Project}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+  \note{开场介绍：本次展示围绕一个问题展开，即如何从大规模生物医学文献中学习可解释、可复现的词表示，并用这些表示支持相似词查询、实体聚类和知识发现。}
+\end{frame}
+
+\begin{frame}{展示路线 / Talk Roadmap}
+  \begin{enumerate}
+    \item 任务背景：CORD-19 与生物医学 NLP
+    \item 数据处理：从论文标题、摘要和全文中抽取语料
+    \item 分词方案：Regex、NLTK、BERT BPE、自定义 BPE
+    \item 表示学习：N-gram、SGNS、Word2Vec、MLM-LoRA
+    \item 探索分析：t-SNE、实体聚类、相似词与共现关系
+    \item 工程重构：从 notebook 到可复现代码包
+  \end{enumerate}
+  \note{这一页告诉听众展示结构。强调本项目不只是训练模型，也包括工程化复现：代码被整理为模块、CLI 和测试。}
+\end{frame}
+
+\section{背景与数据}
+
+\begin{frame}{研究动机 / Motivation}
+  \begin{columns}[T]
+    \column{0.52\textwidth}
+    \begin{block}{核心问题}
+      生物医学术语具有领域性、组合性和快速演化特征，例如 \texttt{SARS-CoV-2}、\texttt{ACE2}、\texttt{COVID-19}。
+    \end{block}
+    \begin{itemize}
+      \item 通用词向量难以充分覆盖专业实体。
+      \item 子词分词有助于处理稀有词和新术语。
+      \item 上下文表示可以捕捉一词多义和语境差异。
+    \end{itemize}
+    \column{0.42\textwidth}
+    \begin{block}{项目目标}
+      构建从语料解析、分词、词表示训练到可视化分析的完整生物医学 NLP pipeline。
+    \end{block}
+  \end{columns}
+  \note{可以用疫情期间新术语迅速出现作为例子。指出为什么 biomedical domain 需要自己的 representation，而不仅是通用 NLP 模型。}
+\end{frame}
+
+\begin{frame}{数据来源 / Data Source}
+  \begin{itemize}
+    \item 主要参考数据：CORD-19 biomedical literature corpus。
+    \item 项目实现支持三类输入：
+      \begin{itemize}
+        \item CORD-19 \texttt{metadata.csv}: title + abstract。
+        \item CORD-19 parsed JSON: title + abstract + body text。
+        \item Plain text: one document or sentence per line。
+      \end{itemize}
+    \item 仓库中保留了已有 tokenized 数据，便于快速 smoke test。
+  \end{itemize}
+  \begin{block}{工程入口}
+    \texttt{python -m biomed\_repr.cli prepare-corpus}
+  \end{block}
+  \note{说明原始数据很大，所以展示时使用已有样本和 limit 参数做快速复现；完整数据可以用同一入口扩展。}
+\end{frame}
+
+\section{方法}
+
+\begin{frame}{分词方案 / Tokenization Tracks}
+  \begin{table}
+    \centering
+    \begin{tabular}{lll}
+      \toprule
+      Track & 方法 & 作用 \\
+      \midrule
+      2.1 & Regex tokenizer & 快速、稳定、保留连字符术语 \\
+      2.2 & NLTK tokenizer & 通用英文分词基线 \\
+      2.3 & BERT tokenizer & 预训练 WordPiece 子词 \\
+      2.4 & SimpleBPE / HF BPE & 面向领域语料训练子词词表 \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+  \begin{block}{例子}
+    \texttt{SARS-CoV-2 binds ACE2 receptors in COVID-19}
+  \end{block}
+  \note{强调 tokenizer 是后续所有模型的基础。重构后默认 regex 会保留 sars-cov-2、covid-19、ace2 等关键术语。}
+\end{frame}
+
+\begin{frame}{词表示模型 / Representation Models}
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+    \begin{block}{统计与浅层模型}
+      \begin{itemize}
+        \item N-gram language model
+        \item Co-occurrence + SPPMI + SVD
+        \item Skip-gram Negative Sampling
+        \item Gensim Word2Vec
+      \end{itemize}
+    \end{block}
+    \column{0.48\textwidth}
+    \begin{block}{上下文表示}
+      \begin{itemize}
+        \item BERT Masked Language Modeling
+        \item LoRA adapter fine-tuning
+        \item Lower trainable-parameter cost
+      \end{itemize}
+    \end{block}
+  \end{columns}
+  \note{这一页讲模型谱系：从可解释统计模型到神经词向量，再到上下文模型。说明重构后每个主要 notebook track 都有 CLI 入口。}
+\end{frame}
+
+\begin{frame}{建模命令示例 / Reproducible Commands}
+  \small
+  \begin{block}{轻量本地训练}
+    \texttt{python -m biomed\_repr.cli train --model-type cooccurrence ...}
+
+    \texttt{python -m biomed\_repr.cli train --model-type ngram ...}
+
+    \texttt{python -m biomed\_repr.cli train --model-type sgns ...}
+  \end{block}
+  \begin{block}{可选重依赖路径}
+    \texttt{python -m biomed\_repr.cli train-word2vec ...}
+
+    \texttt{python -m biomed\_repr.cli train-mlm-lora ...}
+  \end{block}
+  \note{这里重点不是逐字解释命令，而是展示项目已经从 notebook 变成可重复运行的命令行 pipeline。}
+\end{frame}
+
+\section{结果展示}
+
+\begin{frame}{整体词向量 t-SNE / Global t-SNE}
+  \centering
+  \includegraphics[width=0.82\textwidth,height=0.72\textheight,keepaspectratio]{../data/4.1.png}
+  \note{解释 t-SNE 的作用：把高维词向量投影到二维，用于直观看相近词是否聚集。提醒听众 t-SNE 是探索工具，不是严格定量证明。}
+\end{frame}
+
+\begin{frame}{生物医学实体 t-SNE / Biomedical Entity t-SNE}
+  \centering
+  \includegraphics[width=0.82\textwidth,height=0.72\textheight,keepaspectratio]{../data/4.2.png}
+  \note{这一页展示实体词如病毒、疾病、症状、蛋白、药物等是否能形成语义聚集。说明不同类别颜色帮助我们检查 domain-specific embeddings 的质量。}
+\end{frame}
+
+\begin{frame}{相似词与关系挖掘 / Similarity and Relations}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+    \begin{block}{Similarity Search}
+      给定目标词，例如 \texttt{coronavirus}，计算余弦相似度并导出 nearest neighbors。
+    \end{block}
+    \column{0.45\textwidth}
+    \begin{block}{Co-occurrence}
+      从窗口共现中观察术语之间的局部关系，辅助发现疾病、症状、治疗和蛋白的关联。
+    \end{block}
+  \end{columns}
+  \vspace{0.4cm}
+  \begin{block}{输出}
+    CSV / XLSX 表格，普通 t-SNE 图，实体分组 t-SNE 图。
+  \end{block}
+  \note{这里可以连接到 biomedical knowledge mining：词向量和共现关系可以作为构建知识图谱的初步信号，但还需要实体标准化和关系抽取进一步验证。}
+\end{frame}
+
+\section{工程化重构}
+
+\begin{frame}{从 Notebook 到 Package / Refactoring}
+  \begin{table}
+    \centering
+    \begin{tabular}{lll}
+      \toprule
+      模块 & 文件 & 职责 \\
+      \midrule
+      Corpus & \texttt{corpus.py} & CSV/JSON/text 语料读取 \\
+      Tokenization & \texttt{tokenization.py}, \texttt{bpe.py} & 多种分词方案 \\
+      Models & \texttt{representations.py}, \texttt{ngram.py} & 统计词表示 \\
+      Models & \texttt{word2vec.py}, \texttt{mlm.py} & 神经词表示 \\
+      Explore & \texttt{explore.py} & 相似词、实体、t-SNE、导出 \\
+      CLI & \texttt{cli.py} & 可复现命令入口 \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+  \note{强调重构价值：模块边界清晰、默认路径轻量、重依赖功能可选、测试覆盖核心 smoke path。}
+\end{frame}
+
+\begin{frame}{验证与可复现性 / Validation}
+  \begin{itemize}
+    \item Unit tests cover tokenization, co-occurrence vectors, SimpleBPE, N-gram, and SGNS.
+    \item CLI smoke tests run on existing tokenized samples.
+    \item Heavy dependencies are optional and fail with clear installation messages.
+    \item Original PDFs, notebook, generated figures, and reports are preserved in the repository.
+  \end{itemize}
+  \begin{block}{测试命令}
+    \texttt{\$env:PYTHONPATH="src"; python -m pytest}
+  \end{block}
+  \note{说明项目现在不仅能展示结果，也更容易被复查、复跑和扩展。}
+\end{frame}
+
+\begin{frame}{结论 / Conclusion}
+  \begin{itemize}
+    \item 项目实现了生物医学文本的端到端词表示 pipeline。
+    \item 多种分词与建模方法提供了从可解释统计模型到上下文模型的完整路线。
+    \item t-SNE、相似词和实体分组分析展示了词向量的语义结构。
+    \item 重构后的代码包提升了复现性、可维护性和后续扩展空间。
+  \end{itemize}
+  \note{收尾时可以强调：下一步可以做实体标准化、关系抽取和知识图谱构建，把词表示结果转化为更结构化的 biomedical knowledge mining。}
+\end{frame}
+
+\begin{frame}{Q\&A}
+  \centering
+  \Huge Questions?
+  \note{结束并邀请提问。}
+\end{frame}
+
+\end{document}
