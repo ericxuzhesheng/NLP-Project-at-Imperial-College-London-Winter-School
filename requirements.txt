@@ -1,0 +1,9 @@
+numpy>=1.24
+
+# Optional research and visualization extras:
+# nltk>=3.8
+# transformers>=4.40
+# tokenizers>=0.15
+# gensim>=4.3
+# scikit-learn>=1.4
+# matplotlib>=3.8
