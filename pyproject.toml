@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "biomed-repr"
+version = "0.1.0"
+description = "Biomedical word representation pipeline for NLP coursework."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+research = [
+    "nltk>=3.8",
+    "transformers>=4.40",
+    "tokenizers>=0.15",
+    "gensim>=4.3",
+    "scikit-learn>=1.4",
+    "matplotlib>=3.8",
+    "openpyxl>=3.1",
+    "datasets>=2.18",
+    "peft>=0.10",
+]
+
+[project.scripts]
+biomed-repr = "biomed_repr.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
